@@ -3,7 +3,7 @@ SCHEME := AudioFlip
 BUILD_DIR := build
 DERIVED_DATA := $(BUILD_DIR)/DerivedData
 RELEASE_DIR := $(BUILD_DIR)/release
-APP_PATH := $(DERIVED_DATA)/Build/Products/Debug/AudioFlip.app
+APP_PATH := $(abspath $(DERIVED_DATA)/Build/Products/Debug/AudioFlip.app)
 RELEASE_APP_PATH := $(DERIVED_DATA)/Build/Products/Release/AudioFlip.app
 HOST_ARCH := $(shell uname -m)
 MACOS_DESTINATION := generic/platform=macOS
