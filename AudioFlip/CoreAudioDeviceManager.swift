@@ -225,7 +225,7 @@ final class CoreAudioDeviceManager: AudioDeviceManaging, @unchecked Sendable {
         guard status == noErr else {
             throw CoreAudioDeviceManagerError.propertyAccess("inspect audio device channels", status)
         }
-        guard byteCount >= UInt32(MemoryLayout<AudioBufferList>.size) else {
+        guard byteCount >= UInt32(MemoryLayout<UInt32>.size) else {
             throw CoreAudioDeviceManagerError.invalidPropertyData("audio channel configuration")
         }
 
@@ -240,8 +240,7 @@ final class CoreAudioDeviceManager: AudioDeviceManaging, @unchecked Sendable {
         guard status == noErr else {
             throw CoreAudioDeviceManagerError.propertyAccess("read audio device channels", status)
         }
-        let buffers = UnsafeMutableAudioBufferListPointer(storage.bindMemory(to: AudioBufferList.self, capacity: 1))
-        return buffers.contains { $0.mNumberChannels > 0 }
+        return try AudioBufferListInspector.hasChannels(in: storage, byteCount: byteCount)
     }
 
     private func readDefaultDevice(for kind: AudioDeviceKind) throws -> AudioDeviceID? {
@@ -292,6 +291,29 @@ final class CoreAudioDeviceManager: AudioDeviceManaging, @unchecked Sendable {
         )
     }
 
+}
+
+enum AudioBufferListInspector {
+    private static let buffersOffset = MemoryLayout<AudioBufferList>.offset(of: \.mBuffers)!
+
+    static func hasChannels(in storage: UnsafeMutableRawPointer, byteCount: UInt32) throws -> Bool {
+        guard byteCount >= UInt32(MemoryLayout<UInt32>.size) else {
+            throw CoreAudioDeviceManagerError.invalidPropertyData("audio channel configuration")
+        }
+
+        let bufferCount = storage.load(as: UInt32.self)
+        guard bufferCount > 0 else { return false }
+
+        let requiredByteCount = buffersOffset + Int(bufferCount) * MemoryLayout<AudioBuffer>.stride
+        guard Int(byteCount) >= requiredByteCount else {
+            throw CoreAudioDeviceManagerError.invalidPropertyData("audio channel configuration")
+        }
+
+        let buffers = UnsafeMutableAudioBufferListPointer(
+            storage.bindMemory(to: AudioBufferList.self, capacity: 1)
+        )
+        return buffers.contains { $0.mNumberChannels > 0 }
+    }
 }
 
 private enum CoreAudioDeviceManagerError: LocalizedError {

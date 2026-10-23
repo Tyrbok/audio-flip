@@ -1,8 +1,47 @@
+import struct CoreAudio.AudioBuffer
+import struct CoreAudio.AudioBufferList
 import XCTest
 @testable import AudioFlip
 
 @MainActor
 final class AudioDeviceStoreTests: XCTestCase {
+    func testZeroBufferAudioConfigurationIsTreatedAsUnsupportedDirection() throws {
+        let storage = UnsafeMutableRawPointer.allocate(
+            byteCount: MemoryLayout<UInt32>.size,
+            alignment: MemoryLayout<AudioBufferList>.alignment
+        )
+        defer { storage.deallocate() }
+        storage.storeBytes(of: UInt32(0), as: UInt32.self)
+
+        XCTAssertFalse(try AudioBufferListInspector.hasChannels(
+            in: storage,
+            byteCount: UInt32(MemoryLayout<UInt32>.size)
+        ))
+    }
+
+    func testAudioConfigurationDetectsChannelsAndRejectsTruncatedData() throws {
+        let buffersOffset = MemoryLayout<AudioBufferList>.offset(of: \.mBuffers)!
+        let byteCount = buffersOffset + MemoryLayout<AudioBuffer>.stride
+        let storage = UnsafeMutableRawPointer.allocate(
+            byteCount: byteCount,
+            alignment: MemoryLayout<AudioBufferList>.alignment
+        )
+        defer { storage.deallocate() }
+        storage.initializeMemory(as: UInt8.self, repeating: 0, count: byteCount)
+        storage.storeBytes(of: UInt32(1), toByteOffset: 0, as: UInt32.self)
+        storage.storeBytes(
+            of: AudioBuffer(mNumberChannels: 2, mDataByteSize: 0, mData: nil),
+            toByteOffset: buffersOffset,
+            as: AudioBuffer.self
+        )
+
+        XCTAssertTrue(try AudioBufferListInspector.hasChannels(in: storage, byteCount: UInt32(byteCount)))
+        XCTAssertThrowsError(try AudioBufferListInspector.hasChannels(
+            in: storage,
+            byteCount: UInt32(buffersOffset)
+        ))
+    }
+
     func testLoadsAvailableInputAndOutputDevicesAndCurrentDefaults() {
         let manager = FakeAudioDeviceManager(snapshot: FakeAudioDeviceManager.standard)
         let store = AudioDeviceStore(manager: manager)
