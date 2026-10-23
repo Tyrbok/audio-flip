@@ -1,0 +1,22 @@
+# Xcode
+DerivedData/
+*.xcuserstate
+xcuserdata/
+.xcuserdatad/
+*.xccheckout
+*.moved-aside
+*.hmap
+
+# Build and release artifacts
+build/
+*.xcarchive/
+*.dSYM/
+
+# macOS
+.DS_Store
+
+# Secrets and local overrides
+.env
+.env.*
+*.p12
+*.mobileprovision

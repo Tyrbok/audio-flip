@@ -1,0 +1,176 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A10000000000000000000001 /* AudioDevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000001 /* AudioDevice.swift */; };
+		A10000000000000000000002 /* AudioDeviceManaging.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000002 /* AudioDeviceManaging.swift */; };
+		A10000000000000000000003 /* CoreAudioDeviceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000003 /* CoreAudioDeviceManager.swift */; };
+		A10000000000000000000004 /* AudioDeviceStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000004 /* AudioDeviceStore.swift */; };
+		A10000000000000000000005 /* AudioFlipMenuView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000005 /* AudioFlipMenuView.swift */; };
+		A10000000000000000000006 /* AudioFlipApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000006 /* AudioFlipApp.swift */; };
+		A10000000000000000000007 /* AudioDeviceStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000007 /* AudioDeviceStoreTests.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		A20000000000000000000001 /* AudioDevice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioDevice.swift; sourceTree = "<group>"; };
+		A20000000000000000000002 /* AudioDeviceManaging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioDeviceManaging.swift; sourceTree = "<group>"; };
+		A20000000000000000000003 /* CoreAudioDeviceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreAudioDeviceManager.swift; sourceTree = "<group>"; };
+		A20000000000000000000004 /* AudioDeviceStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioDeviceStore.swift; sourceTree = "<group>"; };
+		A20000000000000000000005 /* AudioFlipMenuView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioFlipMenuView.swift; sourceTree = "<group>"; };
+		A20000000000000000000006 /* AudioFlipApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioFlipApp.swift; sourceTree = "<group>"; };
+		A20000000000000000000007 /* AudioDeviceStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioDeviceStoreTests.swift; sourceTree = "<group>"; };
+		A20000000000000000000008 /* AudioFlip.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AudioFlip.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A20000000000000000000009 /* AudioFlipTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AudioFlipTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A30000000000000000000001 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		A30000000000000000000002 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		A40000000000000000000001 = {
+			isa = PBXGroup;
+			children = (
+				A40000000000000000000002 /* AudioFlip */,
+				A40000000000000000000003 /* AudioFlipTests */,
+				A40000000000000000000004 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A40000000000000000000002 /* AudioFlip */ = {
+			isa = PBXGroup;
+			path = AudioFlip;
+			sourceTree = "<group>";
+			children = (
+				A20000000000000000000001 /* AudioDevice.swift */,
+				A20000000000000000000002 /* AudioDeviceManaging.swift */,
+				A20000000000000000000003 /* CoreAudioDeviceManager.swift */,
+				A20000000000000000000004 /* AudioDeviceStore.swift */,
+				A20000000000000000000005 /* AudioFlipMenuView.swift */,
+				A20000000000000000000006 /* AudioFlipApp.swift */,
+			);
+		};
+		A40000000000000000000003 /* AudioFlipTests */ = {
+			isa = PBXGroup;
+			path = AudioFlipTests;
+			sourceTree = "<group>";
+			children = (
+				A20000000000000000000007 /* AudioDeviceStoreTests.swift */,
+			);
+		};
+		A40000000000000000000004 /* Products */ = {
+			isa = PBXGroup;
+			name = Products;
+			sourceTree = "<group>";
+			children = (
+				A20000000000000000000008 /* AudioFlip.app */,
+				A20000000000000000000009 /* AudioFlipTests.xctest */,
+			);
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A50000000000000000000001 /* AudioFlip */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A90000000000000000000007 /* Build configuration list for PBXNativeTarget "AudioFlip" */;
+			buildPhases = (
+				A60000000000000000000001 /* Sources */,
+				A30000000000000000000001 /* Frameworks */,
+				A70000000000000000000001 /* Resources */,
+			);
+			buildRules = ();
+			dependencies = ();
+			name = AudioFlip;
+			productName = AudioFlip;
+			productReference = A20000000000000000000008 /* AudioFlip.app */;
+			productType = "com.apple.product-type.application";
+		};
+		A50000000000000000000002 /* AudioFlipTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A90000000000000000000008 /* Build configuration list for PBXNativeTarget "AudioFlipTests" */;
+			buildPhases = (
+				A60000000000000000000002 /* Sources */, A30000000000000000000002 /* Frameworks */, A70000000000000000000002 /* Resources */,
+			);
+			buildRules = ();
+			dependencies = (A80000000000000000000001 /* PBXTargetDependency */);
+			name = AudioFlipTests;
+			productName = AudioFlipTests;
+			productReference = A20000000000000000000009 /* AudioFlipTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A50000000000000000000003 /* Project object */ = {
+			isa = PBXProject;
+			attributes = { BuildIndependentTargetsInParallel = 1; LastUpgradeCheck = 2700; LastSwiftUpdateCheck = 2700; TargetAttributes = { A50000000000000000000001 = { CreatedOnToolsVersion = 27.1; }; A50000000000000000000002 = { CreatedOnToolsVersion = 27.1; }; }; };
+			buildConfigurationList = A90000000000000000000009 /* Build configuration list for PBXProject "AudioFlip" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (en, Base);
+			mainGroup = A40000000000000000000001;
+			productRefGroup = A40000000000000000000004 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (A50000000000000000000001 /* AudioFlip */, A50000000000000000000002 /* AudioFlipTests */,);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A70000000000000000000001 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		A70000000000000000000002 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A60000000000000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000000000000000000001 /* AudioDevice.swift in Sources */,
+				A10000000000000000000002 /* AudioDeviceManaging.swift in Sources */,
+				A10000000000000000000003 /* CoreAudioDeviceManager.swift in Sources */,
+				A10000000000000000000004 /* AudioDeviceStore.swift in Sources */,
+				A10000000000000000000005 /* AudioFlipMenuView.swift in Sources */,
+				A10000000000000000000006 /* AudioFlipApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A60000000000000000000002 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (A10000000000000000000007 /* AudioDeviceStoreTests.swift in Sources */,);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		A80000000000000000000001 /* PBXTargetDependency */ = {isa = PBXTargetDependency; target = A50000000000000000000001 /* AudioFlip */; targetProxy = A80000000000000000000002 /* PBXContainerItemProxy */; };
+/* End PBXTargetDependency section */
+
+/* Begin PBXContainerItemProxy section */
+		A80000000000000000000002 /* PBXContainerItemProxy */ = {isa = PBXContainerItemProxy; containerPortal = A50000000000000000000003 /* Project object */; proxyType = 1; remoteGlobalIDString = A50000000000000000000001; remoteInfo = AudioFlip; };
+/* End PBXContainerItemProxy section */
+
+/* Begin XCBuildConfiguration section */
+		A90000000000000000000001 /* Debug App */ = {isa = XCBuildConfiguration; buildSettings = { CURRENT_PROJECT_VERSION = 1; ENABLE_TESTABILITY = YES; GENERATE_INFOPLIST_FILE = YES; INFOPLIST_KEY_CFBundleDisplayName = AudioFlip; INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities"; INFOPLIST_KEY_LSUIElement = YES; MACOSX_DEPLOYMENT_TARGET = 14.0; MARKETING_VERSION = 0.1.0; PRODUCT_BUNDLE_IDENTIFIER = com.example.AudioFlip; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_VERSION = 5.0; }; name = Debug; };
+		A90000000000000000000002 /* Release App */ = {isa = XCBuildConfiguration; buildSettings = { CURRENT_PROJECT_VERSION = 1; GENERATE_INFOPLIST_FILE = YES; INFOPLIST_KEY_CFBundleDisplayName = AudioFlip; INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities"; INFOPLIST_KEY_LSUIElement = YES; MACOSX_DEPLOYMENT_TARGET = 14.0; MARKETING_VERSION = 0.1.0; PRODUCT_BUNDLE_IDENTIFIER = com.example.AudioFlip; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_VERSION = 5.0; }; name = Release; };
+		A90000000000000000000003 /* Debug Tests */ = {isa = XCBuildConfiguration; buildSettings = { CODE_SIGNING_ALLOWED = NO; GENERATE_INFOPLIST_FILE = YES; MACOSX_DEPLOYMENT_TARGET = 14.0; PRODUCT_BUNDLE_IDENTIFIER = com.example.AudioFlipTests; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_VERSION = 5.0; TEST_HOST = "$(BUILT_PRODUCTS_DIR)/AudioFlip.app/Contents/MacOS/AudioFlip"; BUNDLE_LOADER = "$(TEST_HOST)"; }; name = Debug; };
+		A90000000000000000000004 /* Release Tests */ = {isa = XCBuildConfiguration; buildSettings = { CODE_SIGNING_ALLOWED = NO; GENERATE_INFOPLIST_FILE = YES; MACOSX_DEPLOYMENT_TARGET = 14.0; PRODUCT_BUNDLE_IDENTIFIER = com.example.AudioFlipTests; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_VERSION = 5.0; TEST_HOST = "$(BUILT_PRODUCTS_DIR)/AudioFlip.app/Contents/MacOS/AudioFlip"; BUNDLE_LOADER = "$(TEST_HOST)"; }; name = Release; };
+		A90000000000000000000005 /* Debug Project */ = {isa = XCBuildConfiguration; buildSettings = { ALWAYS_SEARCH_USER_PATHS = NO; MACOSX_DEPLOYMENT_TARGET = 14.0; SDKROOT = macosx; SWIFT_VERSION = 5.0; }; name = Debug; };
+		A90000000000000000000006 /* Release Project */ = {isa = XCBuildConfiguration; buildSettings = { ALWAYS_SEARCH_USER_PATHS = NO; MACOSX_DEPLOYMENT_TARGET = 14.0; SDKROOT = macosx; SWIFT_VERSION = 5.0; }; name = Release; };
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A90000000000000000000007 /* Build configuration list for PBXNativeTarget "AudioFlip" */ = {isa = XCConfigurationList; buildConfigurations = (A90000000000000000000001 /* Debug App */, A90000000000000000000002 /* Release App */,); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		A90000000000000000000008 /* Build configuration list for PBXNativeTarget "AudioFlipTests" */ = {isa = XCConfigurationList; buildConfigurations = (A90000000000000000000003 /* Debug Tests */, A90000000000000000000004 /* Release Tests */,); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		A90000000000000000000009 /* Build configuration list for PBXProject "AudioFlip" */ = {isa = XCConfigurationList; buildConfigurations = (A90000000000000000000005 /* Debug Project */, A90000000000000000000006 /* Release Project */,); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+/* End XCConfigurationList section */
+	};
+	rootObject = A50000000000000000000003 /* Project object */;
+}
