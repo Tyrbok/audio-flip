@@ -4,6 +4,8 @@ import SwiftUI
 struct AudioFlipMenuView: View {
     @ObservedObject var store: AudioDeviceStore
 
+    private let maxDevicesWithoutScrolling = 10
+
     var body: some View {
         VStack(spacing: 0) {
             if needsScrolling {
@@ -71,7 +73,7 @@ struct AudioFlipMenuView: View {
     }
 
     private var needsScrolling: Bool {
-        listContentHeight > 560
+        store.outputs.count + store.inputs.count > maxDevicesWithoutScrolling
     }
 
     private var listViewportHeight: CGFloat {
