@@ -69,6 +69,49 @@ final class AudioDeviceStoreTests: XCTestCase {
         XCTAssertNil(store.errorMessage)
     }
 
+    func testSettingInputAndOutputVolumeChangesTheCurrentDevices() {
+        let manager = FakeAudioDeviceManager(snapshot: FakeAudioDeviceManager.standard)
+        let store = AudioDeviceStore(manager: manager)
+
+        store.setVolume(0.4, for: .input)
+        store.setVolume(0.8, for: .output)
+
+        XCTAssertEqual(store.inputVolume, AudioDeviceVolume(value: 0.4, isSettable: true))
+        XCTAssertEqual(store.outputVolume, AudioDeviceVolume(value: 0.8, isSettable: true))
+        XCTAssertEqual(manager.volumeOperations, [
+            .init(value: 0.4, id: FakeAudioDeviceManager.microphone.id, kind: .input),
+            .init(value: 0.8, id: FakeAudioDeviceManager.speakers.id, kind: .output)
+        ])
+        XCTAssertNil(store.errorMessage)
+    }
+
+    func testVolumeControlIsIgnoredWhenTheDeviceDoesNotExposeOne() {
+        let snapshot = AudioDeviceSnapshot(
+            devices: FakeAudioDeviceManager.standard.devices,
+            defaultInputID: FakeAudioDeviceManager.standard.defaultInputID,
+            defaultOutputID: FakeAudioDeviceManager.standard.defaultOutputID,
+            outputVolume: FakeAudioDeviceManager.standard.outputVolume
+        )
+        let manager = FakeAudioDeviceManager(snapshot: snapshot)
+        let store = AudioDeviceStore(manager: manager)
+
+        store.setVolume(0.3, for: .input)
+
+        XCTAssertTrue(manager.volumeOperations.isEmpty)
+        XCTAssertNil(store.errorMessage)
+    }
+
+    func testExternalVolumeChangeUpdatesTheSelectedDeviceVolume() async {
+        let manager = FakeAudioDeviceManager(snapshot: FakeAudioDeviceManager.standard)
+        let store = AudioDeviceStore(manager: manager)
+        let volume = AudioDeviceVolume(value: 0.23, isSettable: true)
+
+        manager.onVolumeChange?(FakeAudioDeviceManager.speakers.id, .output, volume)
+        await Task.yield()
+
+        XCTAssertEqual(store.outputVolume, volume)
+    }
+
     func testDeviceAppearingAndDisappearingRefreshesMenu() async {
         let manager = FakeAudioDeviceManager(snapshot: FakeAudioDeviceManager.standard)
         let store = AudioDeviceStore(manager: manager)
@@ -174,6 +217,12 @@ private final class FakeAudioDeviceManager: AudioDeviceManaging {
         let kind: AudioDeviceKind
     }
 
+    struct VolumeOperation: Equatable {
+        let value: Double
+        let id: AudioDeviceID
+        let kind: AudioDeviceKind
+    }
+
     static let microphone = AudioDevice(id: AudioDeviceID(rawValue: 1), name: "Built-in Microphone", supportedKinds: [.input])
     static let speakers = AudioDevice(id: AudioDeviceID(rawValue: 2), name: "Built-in Speakers", supportedKinds: [.output])
     static let usbMicrophone = AudioDevice(id: AudioDeviceID(rawValue: 3), name: "USB Microphone", supportedKinds: [.input])
@@ -182,14 +231,18 @@ private final class FakeAudioDeviceManager: AudioDeviceManaging {
     static let standard = AudioDeviceSnapshot(
         devices: [microphone, speakers, usbMicrophone, display],
         defaultInputID: microphone.id,
-        defaultOutputID: speakers.id
+        defaultOutputID: speakers.id,
+        inputVolume: AudioDeviceVolume(value: 0.65, isSettable: true),
+        outputVolume: AudioDeviceVolume(value: 0.55, isSettable: true)
     )
 
     var onChange: (@Sendable () -> Void)?
+    var onVolumeChange: (@Sendable (AudioDeviceID, AudioDeviceKind, AudioDeviceVolume) -> Void)?
     var snapshotValue: AudioDeviceSnapshot
     var snapshotError: Error?
     var setError: Error?
     private(set) var setOperations: [SetOperation] = []
+    private(set) var volumeOperations: [VolumeOperation] = []
 
     init(snapshot: AudioDeviceSnapshot) {
         snapshotValue = snapshot
@@ -210,8 +263,39 @@ private final class FakeAudioDeviceManager: AudioDeviceManaging {
         snapshotValue = AudioDeviceSnapshot(
             devices: snapshotValue.devices,
             defaultInputID: kind == .input ? id : snapshotValue.defaultInputID,
-            defaultOutputID: kind == .output ? id : snapshotValue.defaultOutputID
+            defaultOutputID: kind == .output ? id : snapshotValue.defaultOutputID,
+            inputVolume: snapshotValue.inputVolume,
+            outputVolume: snapshotValue.outputVolume
         )
+    }
+
+    func setVolume(_ value: Double, for id: AudioDeviceID, kind: AudioDeviceKind) throws -> AudioDeviceVolume {
+        if let setError { throw setError }
+        guard let device = snapshotValue.devices.first(where: { $0.id == id }) else {
+            throw AudioDeviceError.unavailable(kind)
+        }
+        guard device.supports(kind) else { throw AudioDeviceError.unsupported(kind) }
+        guard snapshotValueVolume(for: kind)?.isSettable == true else {
+            throw FakeError.operationFailed
+        }
+
+        volumeOperations.append(VolumeOperation(value: value, id: id, kind: kind))
+        let newVolume = AudioDeviceVolume(value: value, isSettable: true)
+        snapshotValue = AudioDeviceSnapshot(
+            devices: snapshotValue.devices,
+            defaultInputID: snapshotValue.defaultInputID,
+            defaultOutputID: snapshotValue.defaultOutputID,
+            inputVolume: kind == .input ? newVolume : snapshotValue.inputVolume,
+            outputVolume: kind == .output ? newVolume : snapshotValue.outputVolume
+        )
+        return newVolume
+    }
+
+    private func snapshotValueVolume(for kind: AudioDeviceKind) -> AudioDeviceVolume? {
+        switch kind {
+        case .input: snapshotValue.inputVolume
+        case .output: snapshotValue.outputVolume
+        }
     }
 
     func sendChange() {

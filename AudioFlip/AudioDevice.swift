@@ -26,10 +26,31 @@ struct AudioDevice: Equatable, Identifiable, Sendable {
     }
 }
 
+struct AudioDeviceVolume: Equatable, Sendable {
+    let value: Double
+    let isSettable: Bool
+}
+
 struct AudioDeviceSnapshot: Equatable, Sendable {
     let devices: [AudioDevice]
     let defaultInputID: AudioDeviceID?
     let defaultOutputID: AudioDeviceID?
+    let inputVolume: AudioDeviceVolume?
+    let outputVolume: AudioDeviceVolume?
+
+    init(
+        devices: [AudioDevice],
+        defaultInputID: AudioDeviceID?,
+        defaultOutputID: AudioDeviceID?,
+        inputVolume: AudioDeviceVolume? = nil,
+        outputVolume: AudioDeviceVolume? = nil
+    ) {
+        self.devices = devices
+        self.defaultInputID = defaultInputID
+        self.defaultOutputID = defaultOutputID
+        self.inputVolume = inputVolume
+        self.outputVolume = outputVolume
+    }
 
     func defaultID(for kind: AudioDeviceKind) -> AudioDeviceID? {
         switch kind {

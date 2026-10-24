@@ -24,6 +24,7 @@ struct AudioFlipApp: App {
 
 private final class FailedAudioDeviceManager: AudioDeviceManaging {
     var onChange: (@Sendable () -> Void)?
+    var onVolumeChange: (@Sendable (AudioDeviceID, AudioDeviceKind, AudioDeviceVolume) -> Void)?
     private let error: Error
 
     init(error: Error) {
@@ -33,6 +34,10 @@ private final class FailedAudioDeviceManager: AudioDeviceManaging {
     func snapshot() throws -> AudioDeviceSnapshot { throw error }
 
     func setDefaultDevice(id: AudioDeviceID, for kind: AudioDeviceKind) throws {
+        throw error
+    }
+
+    func setVolume(_ value: Double, for id: AudioDeviceID, kind: AudioDeviceKind) throws -> AudioDeviceVolume {
         throw error
     }
 }

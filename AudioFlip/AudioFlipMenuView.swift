@@ -57,9 +57,10 @@ struct AudioFlipMenuView: View {
     private var listViewportHeight: CGFloat {
         let sectionHeaderAndSpacing: CGFloat = 26
         let deviceRows = rowHeight(for: store.outputs.count) + rowHeight(for: store.inputs.count)
+        let volumeRows = CGFloat((store.outputs.isEmpty ? 0 : 1) + (store.inputs.isEmpty ? 0 : 1)) * 32
         let errorHeight: CGFloat = store.errorMessage == nil ? 0 : 44
 
-        return min(24 + (sectionHeaderAndSpacing * 2) + deviceRows + 25 + errorHeight, 560)
+        return min(24 + (sectionHeaderAndSpacing * 2) + volumeRows + deviceRows + 25 + errorHeight, 560)
     }
 
     private func rowHeight(for count: Int) -> CGFloat {
@@ -79,6 +80,13 @@ struct AudioFlipMenuView: View {
                     .font(.system(size: 13, weight: .semibold))
 
                 Spacer()
+
+                Text(devices.first(where: { store.isSelected($0.id, for: kind) })?.name ?? "No device")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                    .frame(maxWidth: 132, alignment: .trailing)
             }
             .padding(.horizontal, 8)
             .padding(.bottom, 2)
@@ -90,6 +98,8 @@ struct AudioFlipMenuView: View {
                     .padding(.leading, 34)
                     .frame(maxWidth: .infinity, minHeight: 34, alignment: .leading)
             } else {
+                volumeControl(for: kind)
+
                 VStack(spacing: 3) {
                     ForEach(devices) { device in
                         let isSelected = store.isSelected(device.id, for: kind)
@@ -100,6 +110,44 @@ struct AudioFlipMenuView: View {
                 }
             }
         }
+    }
+
+    @ViewBuilder
+    private func volumeControl(for kind: AudioDeviceKind) -> some View {
+        let volume = store.volume(for: kind)
+
+        HStack(spacing: 8) {
+            Image(systemName: symbol(for: kind))
+                .font(.system(size: 12))
+                .foregroundStyle(.secondary)
+                .frame(width: 18)
+
+            if let volume {
+                Slider(
+                    value: Binding(
+                        get: { store.volume(for: kind)?.value ?? volume.value },
+                        set: { store.setVolume($0, for: kind) }
+                    ),
+                    in: 0...1
+                )
+                .controlSize(.small)
+                .disabled(!volume.isSettable)
+                .accessibilityLabel("\(kind.displayName) volume")
+                .accessibilityValue("\(Int((volume.value * 100).rounded())) percent")
+
+                Text("\(Int((volume.value * 100).rounded()))%")
+                    .font(.system(size: 11, design: .monospaced))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 38, alignment: .trailing)
+            } else {
+                Text("Volume control unavailable")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.tertiary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+        .padding(.horizontal, 8)
+        .frame(height: 24)
     }
 
     private func errorRow(_ message: String) -> some View {
