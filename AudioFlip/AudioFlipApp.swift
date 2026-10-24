@@ -18,7 +18,7 @@ struct AudioFlipApp: App {
         MenuBarExtra("AudioFlip", systemImage: "arrow.left.arrow.right.circle") {
             AudioFlipMenuView(store: store)
         }
-        .menuBarExtraStyle(.menu)
+        .menuBarExtraStyle(.window)
     }
 }
 
