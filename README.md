@@ -29,9 +29,12 @@ The bundle identifier is currently `com.example.AudioFlip`. Replace it with an i
 make help
 make build
 make run
+make install
 ```
 
 AudioFlip is an agent app (`LSUIElement`), so it has no regular window or Dock icon. Local builds are unsigned and do not require a paid Apple Developer account.
+
+`make install` builds the Release app and copies it to `~/Applications/AudioFlip.app`, where it can be opened from Finder or Spotlight. This is a direct file copy; it does not use Homebrew. `make uninstall` removes the app from the same location. To choose another destination, pass it to either command, such as `make install INSTALL_DIR=/Applications` and later `make uninstall INSTALL_DIR=/Applications` (macOS may require administrator permission for that location).
 
 ## Tests and checks
 
@@ -50,8 +53,11 @@ The XCTest suite uses a fake audio manager to test device discovery state, defau
 | `make build` | Build the debug app |
 | `make test` | Run XCTest |
 | `make run` | Build and open AudioFlip |
+| `make install` | Build Release and copy it to `~/Applications` (override with `INSTALL_DIR=...`) |
+| `make uninstall` | Remove it from `~/Applications` (use the same `INSTALL_DIR` override if applicable) |
 | `make clean` | Remove generated `build/` files |
 | `make archive` | Create an unsigned Xcode archive |
+| `make release` | Build the Release app |
 | `make package` | Create a versioned ZIP and print its SHA-256 |
 | `make check` | Build and test |
 
