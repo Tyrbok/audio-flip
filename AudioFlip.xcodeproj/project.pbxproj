@@ -13,6 +13,7 @@
 		A10000000000000000000005 /* AudioFlipMenuView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000005 /* AudioFlipMenuView.swift */; };
 		A10000000000000000000006 /* AudioFlipApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000006 /* AudioFlipApp.swift */; };
 		A10000000000000000000007 /* AudioDeviceStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000007 /* AudioDeviceStoreTests.swift */; };
+		A10000000000000000000008 /* LaunchAtLoginController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000010 /* LaunchAtLoginController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -25,6 +26,7 @@
 		A20000000000000000000007 /* AudioDeviceStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioDeviceStoreTests.swift; sourceTree = "<group>"; };
 		A20000000000000000000008 /* AudioFlip.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AudioFlip.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A20000000000000000000009 /* AudioFlipTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AudioFlipTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A20000000000000000000010 /* LaunchAtLoginController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchAtLoginController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -53,6 +55,7 @@
 				A20000000000000000000004 /* AudioDeviceStore.swift */,
 				A20000000000000000000005 /* AudioFlipMenuView.swift */,
 				A20000000000000000000006 /* AudioFlipApp.swift */,
+				A20000000000000000000010 /* LaunchAtLoginController.swift */,
 			);
 		};
 		A40000000000000000000003 /* AudioFlipTests */ = {
@@ -138,6 +141,7 @@
 				A10000000000000000000004 /* AudioDeviceStore.swift in Sources */,
 				A10000000000000000000005 /* AudioFlipMenuView.swift in Sources */,
 				A10000000000000000000006 /* AudioFlipApp.swift in Sources */,
+				A10000000000000000000008 /* LaunchAtLoginController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

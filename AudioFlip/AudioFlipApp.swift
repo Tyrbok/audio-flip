@@ -3,6 +3,7 @@ import SwiftUI
 @main
 struct AudioFlipApp: App {
     @StateObject private var store: AudioDeviceStore
+    @StateObject private var launchAtLogin: LaunchAtLoginController
 
     init() {
         let manager: AudioDeviceManaging
@@ -12,11 +13,12 @@ struct AudioFlipApp: App {
             manager = FailedAudioDeviceManager(error: error)
         }
         _store = StateObject(wrappedValue: AudioDeviceStore(manager: manager))
+        _launchAtLogin = StateObject(wrappedValue: LaunchAtLoginController())
     }
 
     var body: some Scene {
         MenuBarExtra("AudioFlip", systemImage: "waveform") {
-            AudioFlipMenuView(store: store)
+            AudioFlipMenuView(store: store, launchAtLogin: launchAtLogin)
         }
         .menuBarExtraStyle(.window)
     }

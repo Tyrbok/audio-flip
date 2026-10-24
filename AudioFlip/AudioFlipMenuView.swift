@@ -3,6 +3,7 @@ import SwiftUI
 
 struct AudioFlipMenuView: View {
     @ObservedObject var store: AudioDeviceStore
+    @ObservedObject var launchAtLogin: LaunchAtLoginController
 
     private let maxDevicesWithoutScrolling = 10
 
@@ -17,6 +18,10 @@ struct AudioFlipMenuView: View {
             } else {
                 deviceSections
             }
+
+            Divider()
+
+            launchAtLoginControls
 
             Divider()
 
@@ -40,6 +45,51 @@ struct AudioFlipMenuView: View {
                 .strokeBorder(.primary.opacity(0.08), lineWidth: 1)
         }
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .onAppear {
+            launchAtLogin.refreshStatus()
+        }
+    }
+
+    private var launchAtLoginControls: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Toggle(isOn: Binding(
+                get: { launchAtLogin.isEnabled },
+                set: { launchAtLogin.setEnabled($0) }
+            )) {
+                Label("Launch at login", systemImage: "power")
+                    .font(.system(size: 12))
+            }
+            .toggleStyle(.switch)
+            .controlSize(.small)
+            .disabled(launchAtLogin.isUnavailable)
+
+            if launchAtLogin.requiresApproval {
+                Text("Allow AudioFlip in Login Items in System Settings.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Button("Open Login Items Settings") {
+                    launchAtLogin.openLoginItemsSettings()
+                }
+                .font(.system(size: 11))
+                .buttonStyle(.link)
+            } else if launchAtLogin.isUnavailable {
+                Text("macOS couldn't find AudioFlip as a login item.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            if let errorMessage = launchAtLogin.errorMessage {
+                Text(errorMessage)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.orange)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(.horizontal, 18)
+        .padding(.vertical, 10)
     }
 
     private var deviceListDivider: some View {

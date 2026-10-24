@@ -2,11 +2,14 @@ PROJECT := AudioFlip.xcodeproj
 SCHEME := AudioFlip
 BUILD_DIR := build
 DERIVED_DATA := $(BUILD_DIR)/DerivedData
+INSTALL_DERIVED_DATA := $(BUILD_DIR)/InstallDerivedData
 RELEASE_DIR := $(BUILD_DIR)/release
 APP_PATH := $(abspath $(DERIVED_DATA)/Build/Products/Debug/AudioFlip.app)
 RELEASE_APP_PATH := $(DERIVED_DATA)/Build/Products/Release/AudioFlip.app
+INSTALL_RELEASE_APP_PATH := $(INSTALL_DERIVED_DATA)/Build/Products/Release/AudioFlip.app
 INSTALL_DIR ?= $(HOME)/Applications
 INSTALL_APP_PATH := $(INSTALL_DIR)/AudioFlip.app
+INSTALL_SIGNING_IDENTITY ?= -
 HOST_ARCH := $(shell uname -m)
 MACOS_DESTINATION := generic/platform=macOS
 VERSION := 0.1.0
@@ -22,7 +25,19 @@ build: ## Build the development app
 test: ## Run the automated XCTest suite
 	xcodebuild -quiet -project $(PROJECT) -scheme $(SCHEME) -configuration Debug -destination 'platform=macOS,arch=$(HOST_ARCH)' -derivedDataPath $(DERIVED_DATA) CODE_SIGNING_ALLOWED=NO test
 
-run: build ## Build and open AudioFlip (macOS reuses an already running instance)
+run: build ## Build, restart, and open AudioFlip
+	@running_pids=$$(pgrep -x AudioFlip || true); \
+	if [ -n "$$running_pids" ]; then \
+		kill -TERM $$running_pids 2>/dev/null || true; \
+		for attempt in 1 2 3 4 5 6 7 8 9 10; do \
+			pgrep -x AudioFlip >/dev/null || break; \
+			sleep 0.2; \
+		done; \
+		if pgrep -x AudioFlip >/dev/null; then \
+			printf 'AudioFlip did not stop after SIGTERM\n' >&2; \
+			exit 1; \
+		fi; \
+	fi
 	open -a "$(APP_PATH)"
 
 clean: ## Remove generated build and release artifacts
@@ -35,9 +50,10 @@ archive: ## Create an unsigned Xcode release archive
 release: ## Build the Release app
 	xcodebuild -quiet -project $(PROJECT) -scheme $(SCHEME) -configuration Release -destination '$(MACOS_DESTINATION)' -derivedDataPath $(DERIVED_DATA) CODE_SIGNING_ALLOWED=NO build
 
-install: release ## Install AudioFlip in INSTALL_DIR (defaults to ~/Applications)
+install: ## Build and install AudioFlip in INSTALL_DIR (defaults to ~/Applications)
+	xcodebuild -quiet -project $(PROJECT) -scheme $(SCHEME) -configuration Release -destination '$(MACOS_DESTINATION)' -derivedDataPath $(INSTALL_DERIVED_DATA) CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY="$(INSTALL_SIGNING_IDENTITY)" build
 	mkdir -p "$(INSTALL_DIR)"
-	ditto "$(RELEASE_APP_PATH)" "$(INSTALL_APP_PATH)"
+	ditto "$(INSTALL_RELEASE_APP_PATH)" "$(INSTALL_APP_PATH)"
 
 uninstall: ## Remove AudioFlip from INSTALL_DIR (defaults to ~/Applications)
 	@test -n "$(strip $(INSTALL_DIR))" || { echo "INSTALL_DIR must not be empty" >&2; exit 1; }

@@ -8,6 +8,7 @@ A lightweight macOS menu bar utility for quickly switching audio input and outpu
 - Shows the current input and output with native menu checkmarks.
 - Changes the system default immediately when a device is selected.
 - Updates when devices or system defaults change.
+- Can be enabled to launch automatically when you log in to macOS.
 - Uses CoreAudio directly; it does not record audio or make network requests.
 
 ## Screenshot
@@ -32,9 +33,11 @@ make run
 make install
 ```
 
-AudioFlip is an agent app (`LSUIElement`), so it has no regular window or Dock icon. Local builds are unsigned and do not require a paid Apple Developer account.
+AudioFlip is an agent app (`LSUIElement`), so it has no regular window or Dock icon. Debug builds and release ZIPs are unsigned. `make install` uses an ad-hoc local code signature, which does not require a paid Apple Developer account; public distribution still needs Developer ID signing and notarization.
 
-`make install` builds the Release app and copies it to `~/Applications/AudioFlip.app`, where it can be opened from Finder or Spotlight. This is a direct file copy; it does not use Homebrew. `make uninstall` removes the app from the same location. To choose another destination, pass it to either command, such as `make install INSTALL_DIR=/Applications` and later `make uninstall INSTALL_DIR=/Applications` (macOS may require administrator permission for that location).
+`make install` builds the Release app and copies it to `~/Applications/AudioFlip.app`, where it can be opened from Finder or Spotlight. It signs the installed copy ad hoc by default; override the signing identity with `INSTALL_SIGNING_IDENTITY=...` if needed. This is a direct file copy; it does not use Homebrew. `make uninstall` removes the app from the same location. To choose another destination, pass it to either command, such as `make install INSTALL_DIR=/Applications` and later `make uninstall INSTALL_DIR=/Applications` (macOS may require administrator permission for that location).
+
+The menu's **Launch at login** switch uses macOS Service Management and stays in sync with Login Items. If macOS requires approval, the menu offers a shortcut to Login Items settings. Launch at login applies when you log in to your macOS account.
 
 ## Tests and checks
 
@@ -52,8 +55,8 @@ The XCTest suite uses a fake audio manager to test device discovery state, defau
 | `make help` | Show commands |
 | `make build` | Build the debug app |
 | `make test` | Run XCTest |
-| `make run` | Build and open AudioFlip |
-| `make install` | Build Release and copy it to `~/Applications` (override with `INSTALL_DIR=...`) |
+| `make run` | Build, stop any running AudioFlip process, and open the new build |
+| `make install` | Build a locally signed Release app and copy it to `~/Applications` (override with `INSTALL_DIR=...`) |
 | `make uninstall` | Remove it from `~/Applications` (use the same `INSTALL_DIR` override if applicable) |
 | `make clean` | Remove generated `build/` files |
 | `make archive` | Create an unsigned Xcode archive |
@@ -69,6 +72,7 @@ Build products are kept under `build/`, which is ignored by Git.
 - `AudioDeviceManaging` is the boundary between application behavior and system audio.
 - `CoreAudioDeviceManager` enumerates devices, reads and sets defaults, and owns CoreAudio listeners. It has no SwiftUI dependency.
 - `AudioDeviceStore` turns snapshots and change notifications into main-actor UI state.
+- `LaunchAtLoginController` registers the app with macOS Service Management and tracks approval status.
 - `AudioFlipMenuView` and `AudioFlipApp` provide the menu bar UI.
 
 CoreAudio IDs are retained as identifiers only in snapshots; the manager rechecks a device before setting it, so a disconnected device produces a recoverable error. Listener blocks use a private serial queue and are removed when the manager is released.
