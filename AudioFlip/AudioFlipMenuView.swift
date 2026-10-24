@@ -40,20 +40,17 @@ struct AudioFlipMenuView: View {
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
-    private var sectionDivider: some View {
+    private var deviceListDivider: some View {
         Rectangle()
             .fill(.primary.opacity(0.1))
             .frame(height: 1)
             .padding(.horizontal, 8)
-            .padding(.vertical, 12)
+            .padding(.vertical, 8)
     }
 
     private var deviceSections: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: 10) {
             deviceSection(store.outputs, kind: .output)
-
-            sectionDivider
-
             deviceSection(store.inputs, kind: .input)
 
             if let errorMessage = store.errorMessage {
@@ -64,12 +61,13 @@ struct AudioFlipMenuView: View {
     }
 
     private var listContentHeight: CGFloat {
-        let sectionHeaderAndSpacing: CGFloat = 26
-        let deviceRows = rowHeight(for: store.outputs.count) + rowHeight(for: store.inputs.count)
-        let volumeRows = CGFloat((store.outputs.isEmpty ? 0 : 1) + (store.inputs.isEmpty ? 0 : 1)) * 32
         let errorHeight: CGFloat = store.errorMessage == nil ? 0 : 44
 
-        return 24 + (sectionHeaderAndSpacing * 2) + volumeRows + deviceRows + 25 + errorHeight
+        return 24
+            + sectionHeight(for: store.outputs)
+            + sectionHeight(for: store.inputs)
+            + 10
+            + errorHeight
     }
 
     private var needsScrolling: Bool {
@@ -85,28 +83,29 @@ struct AudioFlipMenuView: View {
         return CGFloat(count * 36 + (count - 1) * 3)
     }
 
-    private func deviceSection(_ devices: [AudioDevice], kind: AudioDeviceKind) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 8) {
-                Image(systemName: symbol(for: kind))
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.secondary)
-                    .frame(width: 18)
+    private func sectionHeight(for devices: [AudioDevice]) -> CGFloat {
+        let headerHeight: CGFloat = 26
+        let cardVerticalPadding: CGFloat = 24
 
+        guard !devices.isEmpty else {
+            return headerHeight + 34 + cardVerticalPadding
+        }
+
+        let volumeHeight: CGFloat = 24
+        let dividerHeight: CGFloat = 17
+        return headerHeight + volumeHeight + dividerHeight + rowHeight(for: devices.count) + cardVerticalPadding
+    }
+
+    private func deviceSection(_ devices: [AudioDevice], kind: AudioDeviceKind) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 8) {
                 Text(kind.displayName)
                     .font(.system(size: 13, weight: .semibold))
 
                 Spacer()
-
-                Text(devices.first(where: { store.isSelected($0.id, for: kind) })?.name ?? "No device")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-                    .frame(maxWidth: 132, alignment: .trailing)
             }
             .padding(.horizontal, 8)
-            .padding(.bottom, 2)
+            .padding(.bottom, 8)
 
             if devices.isEmpty {
                 Text("No \(kind.displayName.lowercased()) devices available")
@@ -116,16 +115,26 @@ struct AudioFlipMenuView: View {
                     .frame(maxWidth: .infinity, minHeight: 34, alignment: .leading)
             } else {
                 volumeControl(for: kind)
+                deviceListDivider
 
                 VStack(spacing: 3) {
                     ForEach(devices) { device in
                         let isSelected = store.isSelected(device.id, for: kind)
-                        AudioDeviceRow(device: device, isSelected: isSelected) {
+                        AudioDeviceRow(device: device, kind: kind, isSelected: isSelected) {
                             store.select(device.id, for: kind)
                         }
                     }
                 }
             }
+        }
+        .padding(12)
+        .background {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(.primary.opacity(0.035))
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(.primary.opacity(0.08), lineWidth: 1)
         }
     }
 
@@ -190,6 +199,7 @@ struct AudioFlipMenuView: View {
 
 private struct AudioDeviceRow: View {
     let device: AudioDevice
+    let kind: AudioDeviceKind
     let isSelected: Bool
     let action: () -> Void
 
@@ -198,6 +208,12 @@ private struct AudioDeviceRow: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: 10) {
+                Image(systemName: symbolName)
+                    .font(.system(size: 16))
+                    .foregroundStyle(isSelected ? Color.accentColor : .secondary)
+                    .frame(width: 22)
+                    .accessibilityHidden(true)
+
                 Text(device.name)
                     .font(.system(size: 13))
                     .lineLimit(1)
@@ -223,6 +239,29 @@ private struct AudioDeviceRow: View {
         .onHover { isHovered = $0 }
         .accessibilityLabel(device.name)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    private var symbolName: String {
+        let normalizedName = device.name
+            .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
+        let matches: ([String]) -> Bool = { terms in
+            terms.contains { normalizedName.contains($0) }
+        }
+
+        if matches(["display", "displayport", "hdmi", "monitor", "ultrafine", "pantalla"]) {
+            return "display"
+        }
+        if matches(["headphone", "headset", "airpods", "earbuds", "earphones", "cascos", "auricular", "audifono"]) {
+            return "headphones"
+        }
+        if matches(["macbook", "built-in", "built in", "integrado", "portatil"]) {
+            return "laptopcomputer"
+        }
+        if matches(["speaker", "soundbar", "homepod", "altavoz", "parlante"]) {
+            return "speaker.wave.2.fill"
+        }
+
+        return kind == .input ? "mic.fill" : "speaker.wave.2.fill"
     }
 
     private var rowBackground: Color {
