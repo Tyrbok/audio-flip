@@ -6,21 +6,15 @@ struct AudioFlipMenuView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 0) {
-                    deviceSection(store.outputs, kind: .output)
-
-                    sectionDivider
-
-                    deviceSection(store.inputs, kind: .input)
-
-                    if let errorMessage = store.errorMessage {
-                        errorRow(errorMessage)
-                    }
+            if needsScrolling {
+                ScrollView {
+                    deviceSections
                 }
-                .padding(12)
+                .frame(height: listViewportHeight)
+                .scrollBounceBehavior(.basedOnSize, axes: .vertical)
+            } else {
+                deviceSections
             }
-            .frame(height: listViewportHeight)
 
             Divider()
 
@@ -54,13 +48,36 @@ struct AudioFlipMenuView: View {
             .padding(.vertical, 12)
     }
 
-    private var listViewportHeight: CGFloat {
+    private var deviceSections: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            deviceSection(store.outputs, kind: .output)
+
+            sectionDivider
+
+            deviceSection(store.inputs, kind: .input)
+
+            if let errorMessage = store.errorMessage {
+                errorRow(errorMessage)
+            }
+        }
+        .padding(12)
+    }
+
+    private var listContentHeight: CGFloat {
         let sectionHeaderAndSpacing: CGFloat = 26
         let deviceRows = rowHeight(for: store.outputs.count) + rowHeight(for: store.inputs.count)
         let volumeRows = CGFloat((store.outputs.isEmpty ? 0 : 1) + (store.inputs.isEmpty ? 0 : 1)) * 32
         let errorHeight: CGFloat = store.errorMessage == nil ? 0 : 44
 
-        return min(24 + (sectionHeaderAndSpacing * 2) + volumeRows + deviceRows + 25 + errorHeight, 560)
+        return 24 + (sectionHeaderAndSpacing * 2) + volumeRows + deviceRows + 25 + errorHeight
+    }
+
+    private var needsScrolling: Bool {
+        listContentHeight > 560
+    }
+
+    private var listViewportHeight: CGFloat {
+        min(listContentHeight, 560)
     }
 
     private func rowHeight(for count: Int) -> CGFloat {
