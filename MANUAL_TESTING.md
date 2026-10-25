@@ -3,6 +3,7 @@
 Automated tests cover application state through a fake audio manager. Run this checklist on a Mac with real audio hardware before a release:
 
 - [ ] AudioFlip appears in the menu bar and not in the Dock.
+- [ ] AudioFlip's app icon appears in Finder and Spotlight.
 - [ ] The current output and input devices have visible checkmarks.
 - [ ] Selecting an output changes the system default output.
 - [ ] Selecting an input changes the system default input.

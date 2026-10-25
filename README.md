@@ -64,7 +64,7 @@ The XCTest suite uses a fake audio manager to test device discovery state, defau
 | `make package` | Create a versioned ZIP and print its SHA-256 |
 | `make check` | Build and test |
 
-Build products are kept under `build/`, which is ignored by Git.
+Build products are kept under `build/`, which is ignored by Git and excluded from Spotlight indexing. Make targets also unregister generated app bundles from Launch Services; `make install` removes its intermediate app after copying it to `~/Applications`. Run `make clean` to unregister and clear remaining build products without removing the installed app.
 
 ## Architecture
 
@@ -119,7 +119,6 @@ For the first release, use version `0.1.0`:
 
 ## Current limitations
 
-- There is no custom app icon yet; the menu bar uses an SF Symbol.
 - The project identifier and license holder are placeholders.
 - CoreAudio only exposes devices macOS currently makes available to the system.
 - Hardware-dependent behavior must be checked manually before release.
