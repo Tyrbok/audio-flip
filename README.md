@@ -1,133 +1,88 @@
 # AudioFlip
 
-A lightweight macOS menu bar utility for quickly switching audio input and output devices.
+AudioFlip is a native macOS menu bar app for switching audio input and output devices.
 
 ## Features
 
-- Lists CoreAudio devices that expose usable input or output channels.
-- Shows the current input and output with native menu checkmarks.
-- Changes the system default immediately when a device is selected.
-- Updates when devices or system defaults change.
-- Can be enabled to launch automatically when you log in to macOS.
-- Uses CoreAudio directly; it does not record audio or make network requests.
-
-## Screenshot
-
-_Screenshot to be added._
+- Switch the system's default input and output devices from the menu bar.
+- Adjust the input and output volume when the device exposes a settable volume control.
+- Refresh the device list when audio devices or system defaults change.
+- Optionally launch at login through macOS Login Items.
+- Uses CoreAudio locally. AudioFlip does not record audio or make network requests.
 
 ## Requirements
 
 - macOS 14 Sonoma or later.
-- Xcode command line tools (Xcode is needed for the project and XCTest suite).
+- A full Xcode installation with the macOS SDK. The Makefile uses `xcodebuild` to build and test the project.
+- `make`.
 
-The deployment target is macOS 14 because it includes SwiftUI `MenuBarExtra`, allowing AudioFlip to stay a small native menu bar app. The current Xcode project produces universal builds for Apple Silicon (`arm64`) and Intel (`x86_64`) using Xcode's standard macOS architectures.
+The Xcode project builds for both Apple Silicon (`arm64`) and Intel (`x86_64`). The app is a menu bar extra and does not have a Dock icon or a regular window.
 
-The bundle identifier is currently `com.example.AudioFlip`. Replace it with an identifier you control before publishing. The MIT license has a `<COPYRIGHT HOLDER>` placeholder to replace.
+## Build and install
 
-## Build and run
+Clone the repository over HTTPS or download its ZIP from GitHub. Public repositories can be downloaded without a GitHub account. Build and open the Debug app with:
 
 ```sh
-make help
-make build
 make run
+```
+
+To build the Release app and install it in `~/Applications/AudioFlip.app`:
+
+```sh
 make install
 ```
 
-AudioFlip is an agent app (`LSUIElement`), so it has no regular window or Dock icon. Debug builds and release ZIPs are unsigned. `make install` uses an ad-hoc local code signature, which does not require a paid Apple Developer account; public distribution still needs Developer ID signing and notarization.
+The local install uses an ad-hoc signature and does not require an Apple Developer account. To remove it, run `make uninstall`. Both commands accept `INSTALL_DIR=/path/to/Applications` to use another destination.
 
-`make install` builds the Release app and copies it to `~/Applications/AudioFlip.app`, where it can be opened from Finder or Spotlight. It signs the installed copy ad hoc by default; override the signing identity with `INSTALL_SIGNING_IDENTITY=...` if needed. This is a direct file copy; it does not use Homebrew. `make uninstall` removes the app from the same location. To choose another destination, pass it to either command, such as `make install INSTALL_DIR=/Applications` and later `make uninstall INSTALL_DIR=/Applications` (macOS may require administrator permission for that location).
+`make package` creates an unsigned ZIP under `build/release/`. It is intended for local packaging, not one-click public distribution. Distributing a ready-to-run app to other Macs requires Developer ID signing and notarization to provide the usual Gatekeeper experience.
 
-The menu's **Launch at login** switch uses macOS Service Management and stays in sync with Login Items. If macOS requires approval, the menu offers a shortcut to Login Items settings. Launch at login applies when you log in to your macOS account.
+The app's bundle identifier is currently the template value `com.example.AudioFlip`. Choose a stable, unique identifier before distributing builds beyond your own Macs.
 
-## Tests and checks
+## Commands
 
-```sh
-make test
-make check
-```
-
-The XCTest suite uses a fake audio manager to test device discovery state, defaults, selection, connection changes, disconnection, failures, and recovery. Real-device behavior still needs the checklist in [MANUAL_TESTING.md](MANUAL_TESTING.md).
-
-## Makefile commands
+Run `make help` to list the available targets.
 
 | Command | Description |
 | --- | --- |
-| `make help` | Show commands |
-| `make build` | Build the debug app |
-| `make test` | Run XCTest |
-| `make run` | Build, stop any running AudioFlip process, and open the new build |
-| `make install` | Build a locally signed Release app and copy it to `~/Applications` (override with `INSTALL_DIR=...`) |
-| `make uninstall` | Remove it from `~/Applications` (use the same `INSTALL_DIR` override if applicable) |
-| `make clean` | Remove generated `build/` files |
+| `make build` | Build the Debug app |
+| `make run` | Build and open the Debug app |
+| `make install` | Build and install the Release app locally |
+| `make uninstall` | Remove the locally installed app |
+| `make test` | Run the XCTest suite |
+| `make check` | Build the app and run the XCTest suite |
 | `make archive` | Create an unsigned Xcode archive |
 | `make release` | Build the Release app |
 | `make package` | Create a versioned ZIP and print its SHA-256 |
-| `make check` | Build and test |
+| `make clean` | Remove generated build and release artifacts |
 
-Build products are kept under `build/`, which is ignored by Git and excluded from Spotlight indexing. Make targets also unregister generated app bundles from Launch Services; `make install` removes its intermediate app after copying it to `~/Applications`. Run `make clean` to unregister and clear remaining build products without removing the installed app.
+Generated files are stored under `build/` and ignored by Git.
 
-## Architecture
+## Tests and hardware checks
 
-- `AudioDevice` and `AudioDeviceSnapshot` are the app's small device model.
-- `AudioDeviceManaging` is the boundary between application behavior and system audio.
-- `CoreAudioDeviceManager` enumerates devices, reads and sets defaults, and owns CoreAudio listeners. It has no SwiftUI dependency.
-- `AudioDeviceStore` turns snapshots and change notifications into main-actor UI state.
-- `LaunchAtLoginController` registers the app with macOS Service Management and tracks approval status.
-- `AudioFlipMenuView` and `AudioFlipApp` provide the menu bar UI.
+The XCTest suite uses a fake audio manager to test device discovery, device selection, default changes, volume updates, disconnections, errors, and recovery. It does not require audio hardware.
 
-CoreAudio IDs are retained as identifiers only in snapshots; the manager rechecks a device before setting it, so a disconnected device produces a recoverable error. Listener blocks use a private serial queue and are removed when the manager is released.
+Run `make test` or `make check` for automated checks. Before distributing a build, follow the real-device checklist in [MANUAL_TESTING.md](MANUAL_TESTING.md); those hardware checks are not covered by XCTest.
 
-## Installation and distribution
+GitHub Actions runs `make check` on macOS for pushes to `main` and pull requests.
 
-### From source
+## Project structure
 
-Clone the repository and run `make run`. No external packages are required.
+- `AudioFlip/AudioDevice.swift` defines the device model.
+- `AudioFlip/AudioDeviceManaging.swift` defines the boundary between app state and system audio.
+- `AudioFlip/CoreAudioDeviceManager.swift` enumerates audio devices and manages CoreAudio properties and listeners.
+- `AudioFlip/AudioDeviceStore.swift` exposes device state to the UI on the main actor.
+- `AudioFlip/AudioFlipMenuView.swift` and `AudioFlip/AudioFlipApp.swift` implement the menu bar app.
+- `AudioFlip/LaunchAtLoginController.swift` manages macOS Login Items integration.
+- `AudioFlipTests/` contains automated tests using a fake audio manager.
 
-### Release artifacts
+## Versioning
 
-`make archive` creates `build/release/AudioFlip.xcarchive`. `make package` creates `build/release/AudioFlip-0.1.0.zip`, containing `AudioFlip.app`, and prints the artifact SHA-256. Update `VERSION` in the Makefile and `MARKETING_VERSION` in the Xcode project together when preparing a later semantic version.
-
-The initial packaging target is unsigned. Before public distribution, configure Developer ID signing and notarization, then archive → sign → notarize → staple → package. No signing identity, team ID, or notarization credential is stored in this repository. The app bundle identifier must also be replaced before release.
-
-The intended Homebrew distribution is a Cask. After publishing a real GitHub release, a custom tap can use `Casks/audioflip.rb` and a URL shaped like:
-
-```ruby
-cask "audioflip" do
-  version "0.1.0"
-  sha256 "<SHA256_FROM_THE_RELEASE_ZIP>"
-
-  url "https://github.com/<GITHUB_USER>/<GITHUB_REPOSITORY>/releases/download/v#{version}/AudioFlip-#{version}.zip"
-  name "AudioFlip"
-  desc "Quickly switch macOS audio input and output devices"
-  homepage "https://github.com/<GITHUB_USER>/<GITHUB_REPOSITORY>"
-
-  app "AudioFlip.app"
-end
-```
-
-Install from that tap with `brew tap <GITHUB_USER>/tap` followed by `brew install --cask audioflip`. The version, URL, and SHA-256 must match an actual release. Homebrew is not required to build or run the project.
-
-## Release procedure
-
-For the first release, use version `0.1.0`:
-
-1. Replace the bundle identifier and license holder, then confirm the Git working tree is clean.
-2. Run `make check`, then `make archive` and `make package`.
-3. Configure Developer ID signing and notarization if credentials are available; do not describe an unsigned archive as notarized.
-4. Calculate and record the ZIP SHA-256 from `make package`.
-5. Create tag `v0.1.0`, publish a GitHub Release with `AudioFlip-0.1.0.zip`, and use that real URL and hash in the custom tap Cask.
-
-## Current limitations
-
-- The project identifier and license holder are placeholders.
-- CoreAudio only exposes devices macOS currently makes available to the system.
-- Hardware-dependent behavior must be checked manually before release.
-- Public distribution needs Developer ID signing and notarization.
+The current app version is `0.1.0`. Keep `VERSION` in the Makefile and `MARKETING_VERSION` in the Xcode project in sync. Published release tags should use the `vX.Y.Z` format.
 
 ## Contributing
 
-Keep changes small, run `make check`, and update the manual checklist or documentation when behavior changes. The GitHub Actions workflow runs `make check` on macOS for pushes to `main` and pull requests.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development and change guidelines.
 
 ## License
 
-MIT. Replace the copyright holder placeholder in [LICENSE](LICENSE) before publication.
+AudioFlip is licensed under the MIT License. See [LICENSE](LICENSE).

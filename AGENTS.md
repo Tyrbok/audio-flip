@@ -2,9 +2,9 @@
 
 ## Project Structure & Module Organization
 
-- `AudioFlip/` contains the app: UI in `AudioFlipMenuView.swift`, state in `AudioDeviceStore.swift`, device types and boundary in `AudioDevice.swift` and `AudioDeviceManaging.swift`, and CoreAudio code in `CoreAudioDeviceManager.swift`.
+- `AudioFlip/` contains the app: UI in `AudioFlipMenuView.swift`, state in `AudioDeviceStore.swift`, device types and boundary in `AudioDevice.swift` and `AudioDeviceManaging.swift`, CoreAudio code in `CoreAudioDeviceManager.swift`, login item integration in `LaunchAtLoginController.swift`, and app icon assets in `Assets.xcassets/`.
 - `AudioFlipTests/` contains XCTest tests. Use the fake `AudioDeviceManaging` implementation to test behavior without audio hardware; keep CoreAudio-only parsing isolated and testable where practical.
-- `AudioFlip.xcodeproj/` contains the project and shared scheme. `README.md` documents the project, `MANUAL_TESTING.md` covers hardware checks, and `Makefile` is the command entry point. There are no separate asset directories.
+- `AudioFlip.xcodeproj/` contains the project and shared scheme. `README.md` documents the project, `CONTRIBUTING.md` covers development guidelines, `MANUAL_TESTING.md` covers hardware checks, and `Makefile` is the command entry point.
 
 ## Build, Test, and Development Commands
 
