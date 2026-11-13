@@ -1,0 +1,25 @@
+# Model IDs verified with `opencode models`.
+# Confirm availability on the worker host.
+# Add the exact IDs and effort ceilings to the trusted global Dispatcher allowlist before launch.
+version: 1
+
+agent:
+  provider: opencode
+  default_profile: standard
+  # Canonical Dispatcher values only; Orca must also support an effort before launch.
+  models:
+    luna:
+      id: openai/gpt-6-luna
+      allowed_efforts: [low, medium, high, xhigh]
+    sol:
+      id: openai/gpt-6-sol
+      allowed_efforts: [low, medium, high]
+  profiles:
+    standard: {model: luna, effort: medium}
+    complex: {model: sol, effort: high}
+    economical: {model: luna, effort: low}
+    reports: {model: luna, effort: medium}
+
+validation:
+  commands: []
+  on_completion: disabled
