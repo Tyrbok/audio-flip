@@ -13,10 +13,10 @@ final class AudioDeviceStoreTests: XCTestCase {
         defer { storage.deallocate() }
         storage.storeBytes(of: UInt32(0), as: UInt32.self)
 
-        XCTAssertFalse(try AudioBufferListInspector.hasChannels(
+        XCTAssertEqual(try AudioBufferListInspector.channelCount(
             in: storage,
             byteCount: UInt32(MemoryLayout<UInt32>.size)
-        ))
+        ), 0)
     }
 
     func testAudioConfigurationDetectsChannelsAndRejectsTruncatedData() throws {
@@ -36,6 +36,7 @@ final class AudioDeviceStoreTests: XCTestCase {
         )
 
         XCTAssertTrue(try AudioBufferListInspector.hasChannels(in: storage, byteCount: UInt32(byteCount)))
+        XCTAssertEqual(try AudioBufferListInspector.channelCount(in: storage, byteCount: UInt32(byteCount)), 2)
         XCTAssertThrowsError(try AudioBufferListInspector.hasChannels(
             in: storage,
             byteCount: UInt32(buffersOffset)
@@ -97,6 +98,23 @@ final class AudioDeviceStoreTests: XCTestCase {
 
         store.setVolume(0.3, for: .input)
 
+        XCTAssertTrue(manager.volumeOperations.isEmpty)
+        XCTAssertNil(store.errorMessage)
+    }
+
+    func testVolumeControlIsIgnoredWhenTheDeviceVolumeIsReadOnly() {
+        let snapshot = AudioDeviceSnapshot(
+            devices: FakeAudioDeviceManager.standard.devices,
+            defaultInputID: FakeAudioDeviceManager.standard.defaultInputID,
+            defaultOutputID: FakeAudioDeviceManager.standard.defaultOutputID,
+            outputVolume: AudioDeviceVolume(value: 0.55, isSettable: false)
+        )
+        let manager = FakeAudioDeviceManager(snapshot: snapshot)
+        let store = AudioDeviceStore(manager: manager)
+
+        store.setVolume(0.3, for: .output)
+
+        XCTAssertEqual(store.outputVolume, AudioDeviceVolume(value: 0.55, isSettable: false))
         XCTAssertTrue(manager.volumeOperations.isEmpty)
         XCTAssertNil(store.errorMessage)
     }

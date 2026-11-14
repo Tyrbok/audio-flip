@@ -19,7 +19,7 @@ final class CoreAudioDeviceManager: AudioDeviceManaging, @unchecked Sendable {
     private var changeHandler: (@Sendable () -> Void)?
     private var volumeChangeHandler: (@Sendable (AudioDeviceID, AudioDeviceKind, AudioDeviceVolume) -> Void)?
     private var listeners: [ListenerRegistration] = []
-    private var volumeListeners: [VolumeListenerKey: ListenerRegistration] = [:]
+    private var volumeListeners: [VolumeListenerKey: [ListenerRegistration]] = [:]
     private let logger = Logger(subsystem: "com.example.AudioFlip", category: "CoreAudio")
 
     var onChange: (@Sendable () -> Void)? {
@@ -53,7 +53,7 @@ final class CoreAudioDeviceManager: AudioDeviceManaging, @unchecked Sendable {
     }
 
     deinit {
-        (listeners + Array(volumeListeners.values)).forEach(removeListener)
+        (listeners + volumeListeners.values.flatMap { $0 }).forEach(removeListener)
     }
 
     func snapshot() throws -> AudioDeviceSnapshot {
@@ -129,31 +129,37 @@ final class CoreAudioDeviceManager: AudioDeviceManaging, @unchecked Sendable {
     func setVolume(_ value: Double, for id: AudioDeviceID, kind: AudioDeviceKind) throws -> AudioDeviceVolume {
         let deviceID = AudioObjectID(id.rawValue)
         guard deviceID != kAudioObjectUnknown else { throw AudioDeviceError.unavailable(kind) }
-        var address = volumeAddress(for: kind)
-        guard AudioObjectHasProperty(deviceID, &address) else {
+        let properties = readVolumeProperties(for: id, kind: kind)
+        guard !properties.isEmpty else {
             throw CoreAudioDeviceManagerError.volumeUnavailable(kind)
         }
 
-        var isSettable: DarwinBoolean = false
-        var status = AudioObjectIsPropertySettable(deviceID, &address, &isSettable)
-        guard status == noErr else {
-            throw CoreAudioDeviceManagerError.propertyAccess("check whether the \(kind.displayName.lowercased()) volume can be changed", status)
+        // Some devices expose only per-channel controls instead of a master volume.
+        let masterProperty = properties.first { $0.address.mElement == kAudioObjectPropertyElementMain }
+        let targets: [VolumePropertyValue]
+        if let masterProperty, masterProperty.isSettable {
+            targets = [masterProperty]
+        } else {
+            targets = properties.filter { $0.address.mElement != kAudioObjectPropertyElementMain && $0.isSettable }
         }
-        guard isSettable.boolValue else {
+        guard !targets.isEmpty else {
             throw CoreAudioDeviceManagerError.volumeNotSettable(kind)
         }
 
         var scalar = Float32(min(max(value, 0), 1))
-        status = AudioObjectSetPropertyData(
-            deviceID,
-            &address,
-            0,
-            nil,
-            UInt32(MemoryLayout<Float32>.size),
-            &scalar
-        )
-        guard status == noErr else {
-            throw CoreAudioDeviceManagerError.propertyAccess("change the \(kind.displayName.lowercased()) volume", status)
+        for target in targets {
+            var address = target.address
+            let status = AudioObjectSetPropertyData(
+                deviceID,
+                &address,
+                0,
+                nil,
+                UInt32(MemoryLayout<Float32>.size),
+                &scalar
+            )
+            guard status == noErr else {
+                throw CoreAudioDeviceManagerError.propertyAccess("change the \(kind.displayName.lowercased()) volume", status)
+            }
         }
 
         return readVolume(for: id, kind: kind)
@@ -222,35 +228,38 @@ final class CoreAudioDeviceManager: AudioDeviceManaging, @unchecked Sendable {
         if let outputID { desiredKeys.insert(VolumeListenerKey(deviceID: outputID, kind: .output)) }
 
         for key in Array(volumeListeners.keys) where !desiredKeys.contains(key) {
-            if let listener = volumeListeners.removeValue(forKey: key) {
-                removeListener(listener)
+            if let registrations = volumeListeners.removeValue(forKey: key) {
+                registrations.forEach(removeListener)
             }
         }
 
         for key in desiredKeys where volumeListeners[key] == nil {
             let objectID = AudioObjectID(key.deviceID.rawValue)
-            var address = volumeAddress(for: key.kind)
-            guard AudioObjectHasProperty(objectID, &address) else { continue }
+            var registrations: [ListenerRegistration] = []
+            for address in volumeAddresses(for: key.deviceID, kind: key.kind) {
+                var address = address
+                let block: AudioObjectPropertyListenerBlock = { [weak self] _, _ in
+                    self?.notifyVolumeChange(for: key)
+                }
+                let status = AudioObjectAddPropertyListenerBlock(
+                    objectID,
+                    &address,
+                    listenerQueue,
+                    block
+                )
+                guard status == noErr else {
+                    logger.error("Could not listen for the default \(key.kind.displayName.lowercased()) volume (OSStatus \(status)).")
+                    continue
+                }
 
-            let block: AudioObjectPropertyListenerBlock = { [weak self] _, _ in
-                self?.notifyVolumeChange(for: key)
-            }
-            let status = AudioObjectAddPropertyListenerBlock(
-                objectID,
-                &address,
-                listenerQueue,
-                block
-            )
-            guard status == noErr else {
-                logger.error("Could not listen for the default \(key.kind.displayName.lowercased()) volume (OSStatus \(status)).")
-                continue
+                registrations.append(ListenerRegistration(
+                    objectID: objectID,
+                    address: address,
+                    block: block
+                ))
             }
 
-            volumeListeners[key] = ListenerRegistration(
-                objectID: objectID,
-                address: address,
-                block: block
-            )
+            if !registrations.isEmpty { volumeListeners[key] = registrations }
         }
     }
 
@@ -317,6 +326,10 @@ final class CoreAudioDeviceManager: AudioDeviceManaging, @unchecked Sendable {
     }
 
     private func hasChannels(device: AudioObjectID, scope: AudioObjectPropertyScope) throws -> Bool {
+        try readChannelCount(device: device, scope: scope) > 0
+    }
+
+    private func readChannelCount(device: AudioObjectID, scope: AudioObjectPropertyScope) throws -> Int {
         var address = AudioObjectPropertyAddress(
             mSelector: kAudioDevicePropertyStreamConfiguration,
             mScope: scope,
@@ -342,7 +355,7 @@ final class CoreAudioDeviceManager: AudioDeviceManaging, @unchecked Sendable {
         guard status == noErr else {
             throw CoreAudioDeviceManagerError.propertyAccess("read audio device channels", status)
         }
-        return try AudioBufferListInspector.hasChannels(in: storage, byteCount: byteCount)
+        return try AudioBufferListInspector.channelCount(in: storage, byteCount: byteCount)
     }
 
     private func readDefaultDevice(for kind: AudioDeviceKind) throws -> AudioDeviceID? {
@@ -370,35 +383,84 @@ final class CoreAudioDeviceManager: AudioDeviceManaging, @unchecked Sendable {
     private func readVolume(for deviceID: AudioDeviceID?, kind: AudioDeviceKind) -> AudioDeviceVolume? {
         guard let deviceID else { return nil }
 
-        let objectID = AudioObjectID(deviceID.rawValue)
-        var address = volumeAddress(for: kind)
-        guard AudioObjectHasProperty(objectID, &address) else { return nil }
-
-        var scalar: Float32 = 0
-        var byteCount = UInt32(MemoryLayout<Float32>.size)
-        let readStatus = AudioObjectGetPropertyData(objectID, &address, 0, nil, &byteCount, &scalar)
-        guard readStatus == noErr else {
-            logger.error("Could not read the default \(kind.displayName.lowercased()) volume (OSStatus \(readStatus)).")
-            return nil
+        let properties = readVolumeProperties(for: deviceID, kind: kind)
+        let masterProperty = properties.first { $0.address.mElement == kAudioObjectPropertyElementMain }
+        if let masterProperty, masterProperty.isSettable {
+            return AudioDeviceVolume(value: masterProperty.value, isSettable: true)
         }
 
-        var isSettable: DarwinBoolean = false
-        let settableStatus = AudioObjectIsPropertySettable(objectID, &address, &isSettable)
-        if settableStatus != noErr {
-            logger.error("Could not check whether the default \(kind.displayName.lowercased()) volume is settable (OSStatus \(settableStatus)).")
+        let channelProperties = properties.filter { $0.address.mElement != kAudioObjectPropertyElementMain }
+        if channelProperties.contains(where: { $0.isSettable }) {
+            return AudioDeviceVolume(value: averageVolume(in: channelProperties), isSettable: true)
         }
-
-        return AudioDeviceVolume(
-            value: min(max(Double(scalar), 0), 1),
-            isSettable: settableStatus == noErr && isSettable.boolValue
-        )
+        if let masterProperty {
+            return AudioDeviceVolume(value: masterProperty.value, isSettable: false)
+        }
+        guard !channelProperties.isEmpty else { return nil }
+        return AudioDeviceVolume(value: averageVolume(in: channelProperties), isSettable: false)
     }
 
-    private func volumeAddress(for kind: AudioDeviceKind) -> AudioObjectPropertyAddress {
+    private struct VolumePropertyValue {
+        let address: AudioObjectPropertyAddress
+        let value: Double
+        let isSettable: Bool
+    }
+
+    private func readVolumeProperties(for deviceID: AudioDeviceID, kind: AudioDeviceKind) -> [VolumePropertyValue] {
+        let objectID = AudioObjectID(deviceID.rawValue)
+        return volumeAddresses(for: deviceID, kind: kind).compactMap { address in
+            var address = address
+            var scalar: Float32 = 0
+            var byteCount = UInt32(MemoryLayout<Float32>.size)
+            let readStatus = AudioObjectGetPropertyData(objectID, &address, 0, nil, &byteCount, &scalar)
+            guard readStatus == noErr else {
+                logger.error("Could not read the default \(kind.displayName.lowercased()) volume (OSStatus \(readStatus)).")
+                return nil
+            }
+
+            var isSettable: DarwinBoolean = false
+            let settableStatus = AudioObjectIsPropertySettable(objectID, &address, &isSettable)
+            if settableStatus != noErr {
+                logger.error("Could not check whether the default \(kind.displayName.lowercased()) volume is settable (OSStatus \(settableStatus)).")
+            }
+            return VolumePropertyValue(
+                address: address,
+                value: min(max(Double(scalar), 0), 1),
+                isSettable: settableStatus == noErr && isSettable.boolValue
+            )
+        }
+    }
+
+    private func volumeAddresses(for deviceID: AudioDeviceID, kind: AudioDeviceKind) -> [AudioObjectPropertyAddress] {
+        let objectID = AudioObjectID(deviceID.rawValue)
+        var addresses: [AudioObjectPropertyAddress] = []
+        var masterAddress = volumeAddress(for: kind, element: kAudioObjectPropertyElementMain)
+        if AudioObjectHasProperty(objectID, &masterAddress) { addresses.append(masterAddress) }
+
+        let scope = kind == .input ? kAudioDevicePropertyScopeInput : kAudioDevicePropertyScopeOutput
+        do {
+            let channelCount = try readChannelCount(device: objectID, scope: scope)
+            if channelCount > 0 {
+                for channel in 1...channelCount {
+                    var address = volumeAddress(for: kind, element: AudioObjectPropertyElement(channel))
+                    if AudioObjectHasProperty(objectID, &address) { addresses.append(address) }
+                }
+            }
+        } catch {
+            logger.error("Could not inspect the default \(kind.displayName.lowercased()) volume channels: \(error.localizedDescription, privacy: .public)")
+        }
+        return addresses
+    }
+
+    private func averageVolume(in properties: [VolumePropertyValue]) -> Double {
+        properties.reduce(0) { $0 + $1.value } / Double(properties.count)
+    }
+
+    private func volumeAddress(for kind: AudioDeviceKind, element: AudioObjectPropertyElement) -> AudioObjectPropertyAddress {
         AudioObjectPropertyAddress(
             mSelector: kAudioDevicePropertyVolumeScalar,
             mScope: kind == .input ? kAudioDevicePropertyScopeInput : kAudioDevicePropertyScopeOutput,
-            mElement: kAudioObjectPropertyElementMain
+            mElement: element
         )
     }
 
@@ -433,13 +495,13 @@ final class CoreAudioDeviceManager: AudioDeviceManaging, @unchecked Sendable {
 enum AudioBufferListInspector {
     private static let buffersOffset = MemoryLayout<AudioBufferList>.offset(of: \.mBuffers)!
 
-    static func hasChannels(in storage: UnsafeMutableRawPointer, byteCount: UInt32) throws -> Bool {
+    static func channelCount(in storage: UnsafeMutableRawPointer, byteCount: UInt32) throws -> Int {
         guard byteCount >= UInt32(MemoryLayout<UInt32>.size) else {
             throw CoreAudioDeviceManagerError.invalidPropertyData("audio channel configuration")
         }
 
         let bufferCount = storage.load(as: UInt32.self)
-        guard bufferCount > 0 else { return false }
+        guard bufferCount > 0 else { return 0 }
 
         let requiredByteCount = buffersOffset + Int(bufferCount) * MemoryLayout<AudioBuffer>.stride
         guard Int(byteCount) >= requiredByteCount else {
@@ -449,7 +511,11 @@ enum AudioBufferListInspector {
         let buffers = UnsafeMutableAudioBufferListPointer(
             storage.bindMemory(to: AudioBufferList.self, capacity: 1)
         )
-        return buffers.contains { $0.mNumberChannels > 0 }
+        return buffers.reduce(0) { $0 + Int($1.mNumberChannels) }
+    }
+
+    static func hasChannels(in storage: UnsafeMutableRawPointer, byteCount: UInt32) throws -> Bool {
+        try channelCount(in: storage, byteCount: byteCount) > 0
     }
 }
 

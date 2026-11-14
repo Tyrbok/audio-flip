@@ -200,7 +200,7 @@ struct AudioFlipMenuView: View {
                 .foregroundStyle(.secondary)
                 .frame(width: 18)
 
-            if let volume {
+            if let volume, volume.isSettable {
                 Slider(
                     value: Binding(
                         get: { store.volume(for: kind)?.value ?? volume.value },
@@ -209,7 +209,6 @@ struct AudioFlipMenuView: View {
                     in: 0...1
                 )
                 .controlSize(.small)
-                .disabled(!volume.isSettable)
                 .accessibilityLabel("\(kind.displayName) volume")
                 .accessibilityValue("\(Int((volume.value * 100).rounded())) percent")
 
