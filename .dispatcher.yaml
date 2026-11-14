@@ -11,15 +11,19 @@ agent:
     luna:
       id: openai/gpt-6-luna
       allowed_efforts: [low, medium, high, xhigh]
+    luna_medium:
+      id: openai/gpt-6-luna
+      allowed_efforts: [medium]
     sol:
       id: openai/gpt-6-sol
       allowed_efforts: [low, medium, high]
   profiles:
-    standard: {model: luna, effort: medium}
+    standard: {model: luna_medium, effort: medium}
     complex: {model: sol, effort: high}
     economical: {model: luna, effort: low}
     reports: {model: luna, effort: medium}
 
 validation:
-  commands: []
-  on_completion: disabled
+  commands:
+    - "make test"
+  on_completion: required
